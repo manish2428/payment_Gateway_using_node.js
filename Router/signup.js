@@ -1,39 +1,54 @@
 const router=require('express').Router()
 const USER=require('../Models/user_models')
 const bcrypt=require('bcrypt')
-const saltRounds=10
+const jwt=require("jsonwebtoken")
+// const saltRounds=10  
 
 
 
 
-router.get('/',(req,res)=>{
-    console.log("hlo")
+router.post('/login',async(req,res)=>{
+    
+    let data=await USER.findOne({email:req.body.email});
+    if(!data){
+        return res.status(500).json({"msg":"Email doesnot exist"})
+    }
+    const token=jwt.sign({
+        data: req.body.email,
+        date:Date.now()
+      },'secret', { expiresIn: '1h' });
+   if(bcrypt.compareSync(req.body.password, data.password)){
+      data.password="";
+      console.log(token)
+      return res.status(200).json({"data":data,"token":token})
+   } 
+   else{
+    return res.status(401).json({"msg":"Invalid credentials"})
+   }
+    
 })
 
+
+
 router.post('/',async(req,res)=>{
+    const salt = bcrypt.genSaltSync(Number(process.env.SALT));//generating salt value by providing salt rounds
+    const hash = bcrypt.hashSync(req.body.password, salt);   //hashing the password
+      
     let user=new USER({
      name:req.body.name,
      email:req.body.email,
      phone:req.body.phone,
      address:req.body.address,
+     password:hash
     })
-
-    bcrypt.genSalt(saltRounds, function(err, salt) {
-        if(salt){
-        bcrypt.hash(req.body.password, salt, function(err, hash) {
-            if(hash){
-            user.password=hash
-            }
-        });
-        }
-    });
-    await user.save((err,user)=>{
-        if(err){
-            return res.status(500).json({"msg":err})
-        }else{
-             return res.status(200).json({"msg":user})
-        }
+    user.save()
+    .then(()=>{
+        user.password="";
+        res.status(200).json(user)
     })
+    .catch((err)=>{
+        res.status(500).json(err)
+        })
     
 
 })
