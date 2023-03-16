@@ -4,26 +4,24 @@ const mongoose=require('mongoose')
 const item_schema=new mongoose.Schema({
     user_id:{
         type:mongoose.Schema.Types.ObjectId,
-        required:true
+        
     },
     item_name:{
-        type:String,
-        required:true
+        type:String
     },
     price:{
-        type:Number,
-        required:true
+        type:Number
     },
     description:{
         type:String
     },
-    image_id:[{
-     img_id:String
+    image:{
+        data: Buffer,
+        contentType: String
     }
-    ],
+    ,
     quantity:{
-        type:Number,
-        required:true
+        type:Number
     }
 
 })
